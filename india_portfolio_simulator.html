@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indian Portfolio Retirement Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #242424;
+            --bg-tertiary: #2d2d2d;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --text-tertiary: #808080;
+            --border-color: #3a3a3a;
+            --accent-green: #1d9e75;
+            --accent-orange: #ef9f27;
+            --accent-lime: #639922;
+            --accent-purple: #7f77dd;
+            --accent-blue: #378add;
+            --accent-red: #e24b4a;
+        }
+
+        html, body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        .header {
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .header p {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .config-section {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .config-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .config-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .config-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .config-label span {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .config-item input[type="range"] {
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            background: var(--bg-tertiary);
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .config-item input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(29, 158, 117, 0.4);
+            transition: all 0.2s;
+        }
+
+        .config-item input[type="range"]::-webkit-slider-thumb:hover {
+            box-shadow: 0 0 12px rgba(29, 158, 117, 0.6);
+            transform: scale(1.1);
+        }
+
+        .config-item input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 8px rgba(29, 158, 117, 0.4);
+        }
+
+        .config-item select {
+            padding: 0.6rem 0.8rem;
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .config-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .config-checkbox input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--accent-green);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .metric-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+
+        .metric-card.positive .metric-value {
+            color: var(--accent-green);
+        }
+
+        .metric-card.warning .metric-value {
+            color: var(--accent-orange);
+        }
+
+        .metric-card.critical .metric-value {
+            color: var(--accent-red);
+        }
+
+        .metric-subtext {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            margin-top: 0.3rem;
+        }
+
+        .tabs-container {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+            overflow-x: auto;
+        }
+
+        .tab-button {
+            padding: 1rem 1.5rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .tab-button:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-button.active {
+            color: var(--text-primary);
+            border-bottom-color: var(--accent-green);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .grid-2col {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-container {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+
+        .chart-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .chart-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .chart-area {
+            position: relative;
+            height: 250px;
+            margin-bottom: 1rem;
+        }
+
+        .table-wrapper {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow-x: auto;
+            margin-bottom: 2rem;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            min-width: 900px;
+        }
+
+        @media (min-width: 1200px) {
+            .data-table {
+                min-width: 1100px;
+            }
+        }
+
+        .data-table thead {
+            background-color: var(--bg-tertiary);
+            position: sticky;
+            top: 0;
+        }
+
+        .data-table th {
+            padding: 1rem;
+            text-align: right;
+            color: var(--text-secondary);
+            font-weight: 600;
+            border-right: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        .data-table th:first-child {
+            text-align: center;
+        }
+
+        .data-table td {
+            padding: 0.8rem 1rem;
+            text-align: right;
+            border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table td:first-child {
+            text-align: center;
+            font-weight: 600;
+            position: sticky;
+            left: 0;
+            background-color: var(--bg-secondary);
+            z-index: 1;
+        }
+
+        .data-table tr.highlight-rebalance {
+            background-color: rgba(29, 158, 117, 0.1);
+        }
+
+        .data-table tr.highlight-warning {
+            background-color: rgba(239, 159, 39, 0.1);
+        }
+
+        .data-table tr.highlight-critical {
+            background-color: rgba(226, 75, 74, 0.1);
+        }
+
+        .table-note {
+            padding: 1rem;
+            font-size: 0.8rem;
+            color: var(--text-tertiary);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .observations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .observation-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-left: 3px solid var(--text-secondary);
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+
+        .observation-card.positive {
+            border-left-color: var(--accent-green);
+        }
+
+        .observation-card.warning {
+            border-left-color: var(--accent-orange);
+        }
+
+        .observation-card.critical {
+            border-left-color: var(--accent-red);
+        }
+
+        .observation-card.neutral {
+            border-left-color: var(--accent-blue);
+        }
+
+        .observation-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.8rem;
+        }
+
+        .observation-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+            color: var(--accent-green);
+        }
+
+        .observation-card.warning .observation-value {
+            color: var(--accent-orange);
+        }
+
+        .observation-card.critical .observation-value {
+            color: var(--accent-red);
+        }
+
+        .observation-card.neutral .observation-value {
+            color: var(--accent-blue);
+        }
+
+        .observation-text {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            .config-grid {
+                grid-template-columns: 1fr;
+            }
+            .grid-2col {
+                grid-template-columns: 1fr;
+            }
+            .chart-area {
+                height: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Indian Portfolio Retirement Simulator</h1>
+            <p>Hybrid FD + Nifty 50 strategy · Indian income tax (FY 2024-25) · LTCG at 12.5% above ₹1.25L · Yearly compounding</p>
+        </div>
+
+        <div class="config-section">
+            <div class="config-title">⚙️ Configuration — all values are live · drag to update</div>
+            <div class="config-grid">
+                <div class="config-item">
+                    <div class="config-label">Initial FD corpus <span id="l-fd">₹1.00Cr</span></div>
+                    <input type="range" id="s-fd" min="25" max="500" value="100" step="5">
+                </div>
+                <div class="config-item">
+                    <div class="config-label">Initial Nifty corpus <span id="l-eq">₹1.00Cr</span></div>
+                    <input type="range" id="s-eq" min="25" max="500" value="100" step="5">
+                </div>
+                <div class="config-item">
+                    <div class="config-label">Monthly expense <span id="l-ex">₹75K</span></div>
+                    <input type="range" id="s-ex" min="10" max="300" value="75" step="5">
+                </div>
+                <div class="config-item">
+                    <div class="config-label">FD interest rate <span id="l-fr">7.0%</span></div>
+                    <input type="range" id="s-fr" min="3" max="12" value="7" step="0.5">
+                </div>
+                <div class="config-item">
+                    <div class="config-label">Nifty expected CAGR <span id="l-er">12.0%</span></div>
+                    <input type="range" id="s-er" min="5" max="20" value="12" step="0.5">
+                </div>
+                <div class="config-item">
+                    <div class="config-label">Inflation rate <span id="l-in">6.0%</span></div>
+                    <input type="range" id="s-in" min="3" max="12" value="6" step="0.5">
+                </div>
+                <div class="config-item">
+                    <div class="config-label">Rebalance every (years) <span id="l-rb">5</span></div>
+                    <input type="range" id="s-rb" min="3" max="15" value="5" step="1">
+                </div>
+                <div class="config-item">
+                    <div class="config-label">Equity sold at rebalance <span id="l-rf">50%</span></div>
+                    <input type="range" id="s-rf" min="10" max="90" value="50" step="5">
+                </div>
+                <div class="config-item">
+                    <div class="config-label">Projection horizon <span id="l-yr">30 yrs</span></div>
+                    <input type="range" id="s-yr" min="10" max="45" value="30" step="1">
+                </div>
+                <div class="config-item">
+                    <div class="config-label">Tax regime</div>
+                    <select id="s-rg">
+                        <option value="new">New regime (default 2024-25)</option>
+                        <option value="old">Old regime</option>
+                    </select>
+                </div>
+                <div class="config-item">
+                    <label class="config-checkbox">
+                        <input type="checkbox" id="s-sc">
+                        Senior citizen (60+) — 80TTB deduction
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="metrics-grid" id="metrics-container"></div>
+
+        <div class="tabs-container">
+            <button class="tab-button active" onclick="switchTab(0)">📊 Overview</button>
+            <button class="tab-button" onclick="switchTab(1)">📈 Year-by-year Table</button>
+            <button class="tab-button" onclick="switchTab(2)">🎯 Strategy Comparison</button>
+            <button class="tab-button" onclick="switchTab(3)">⚠️ Risk & Insights</button>
+        </div>
+
+        <div class="tab-content active" id="tab-0">
+            <div class="grid-2col">
+                <div class="chart-container">
+                    <div class="chart-title">Hybrid strategy — corpus breakdown over time</div>
+                    <div class="chart-legend">
+                        <span class="legend-item"><span class="legend-color" style="background: var(--accent-green)"></span>Total NW</span>
+                        <span class="legend-item"><span class="legend-color" style="background: var(--accent-orange)"></span>FD</span>
+                        <span class="legend-item"><span class="legend-color" style="background: var(--accent-lime)"></span>Equity</span>
+                    </div>
+                    <div class="chart-area"><canvas id="c1"></canvas></div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">FD vs equity allocation (% of total NW)</div>
+                    <div class="chart-legend">
+                        <span class="legend-item"><span class="legend-color" style="background: var(--accent-orange)"></span>FD</span>
+                        <span class="legend-item"><span class="legend-color" style="background: var(--accent-lime)"></span>Equity</span>
+                    </div>
+                    <div class="chart-area"><canvas id="c2"></canvas></div>
+                </div>
+            </div>
+            <div class="grid-2col">
+                <div class="chart-container">
+                    <div class="chart-title">Annual taxes paid — FD interest tax + LTCG at rebalancing</div>
+                    <div class="chart-legend">
+                        <span class="legend-item"><span class="legend-color" style="background: #d85a30"></span>FD income tax</span>
+                        <span class="legend-item"><span class="legend-color" style="background: var(--accent-red)"></span>LTCG (rebalance)</span>
+                    </div>
+                    <div class="chart-area"><canvas id="c3"></canvas></div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">Withdrawal rate — annual expenses ÷ net worth</div>
+                    <div class="chart-legend">
+                        <span class="legend-item"><span class="legend-color" style="background: var(--accent-green)"></span>Withdrawal %</span>
+                        <span class="legend-item"><span class="legend-color" style="background: var(--accent-red)"></span>5% threshold</span>
+                    </div>
+                    <div class="chart-area"><canvas id="c4"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="tab-1">
+            <div class="table-wrapper">
+                <div id="table-container"></div>
+                <div class="table-note" id="table-note"></div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="tab-2">
+            <div class="grid-2col">
+                <div class="chart-container">
+                    <div class="chart-title">Net worth — all three strategies</div>
+                    <div class="chart-legend">
+                        <span class="legend-item"><span class="legend-color" style="background: var(--accent-green)"></span>Hybrid</span>
+                        <span class="legend-item"><span class="legend-color" style="background: var(--accent-purple)"></span>100% Nifty</span>
+                        <span class="legend-item"><span class="legend-color" style="background: var(--accent-blue)"></span>60/40</span>
+                    </div>
+                    <div class="chart-area"><canvas id="c5"></canvas></div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">Inflation-adjusted real net worth</div>
+                    <div class="chart-legend">
+                        <span class="legend-item"><span class="legend-color" style="background: var(--accent-green)"></span>Hybrid</span>
+                        <span class="legend-item"><span class="legend-color" style="background: var(--accent-purple)"></span>100% Nifty</span>
+                        <span class="legend-item"><span class="legend-color" style="background: var(--accent-blue)"></span>60/40</span>
+                    </div>
+                    <div class="chart-area"><canvas id="c6"></canvas></div>
+                </div>
+            </div>
+            <div class="grid-2col">
+                <div class="chart-container">
+                    <div class="chart-title">Cumulative taxes paid across all strategies</div>
+                    <div class="chart-legend">
+                        <span class="legend-item"><span class="legend-color" style="background: var(--accent-green)"></span>Hybrid</span>
+                        <span class="legend-item"><span class="legend-color" style="background: var(--accent-purple)"></span>100% Nifty</span>
+                        <span class="legend-item"><span class="legend-color" style="background: var(--accent-blue)"></span>60/40</span>
+                    </div>
+                    <div class="chart-area"><canvas id="c7"></canvas></div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">Real purchasing power of monthly expenses over time</div>
+                    <div class="chart-legend">
+                        <span class="legend-item"><span class="legend-color" style="background: #a32d2d"></span>Nominal</span>
+                        <span class="legend-item"><span class="legend-color" style="background: var(--text-tertiary)"></span>Real (base year ₹)</span>
+                    </div>
+                    <div class="chart-area"><canvas id="c8"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="tab-3">
+            <div class="observations-grid" id="observations-container"></div>
+            <div class="chart-container">
+                <div class="chart-title">Sequence-of-return risk — Nifty -30% in years 1–3 vs base case</div>
+                <div class="chart-legend">
+                    <span class="legend-item"><span class="legend-color" style="background: var(--accent-green)"></span>Base case</span>
+                    <span class="legend-item"><span class="legend-color" style="background: var(--accent-red)"></span>Stress: -30% yr 1–3</span>
+                    <span class="legend-item"><span class="legend-color" style="background: var(--accent-purple)"></span>Stress: 100% Nifty</span>
+                </div>
+                <div class="chart-area"><canvas id="c9"></canvas></div>
+            </div>
+            <div class="chart-container" style="margin-top: 2rem;">
+                <div class="chart-title">Safe withdrawal rate analysis — years until depletion at various expense levels</div>
+                <div class="chart-area"><canvas id="c10"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+    <script>
+        const $ = id => document.getElementById(id);
+        const C = (v, d = 2) => {
+            if (!isFinite(v) || v <= 0) return '₹0';
+            const c = v / 1e7;
+            if (c >= 100) return '₹' + Math.round(c) + 'Cr';
+            if (c >= 1) return '₹' + c.toFixed(d) + 'Cr';
+            const l = v / 1e5;
+            if (l >= 0.1) return '₹' + l.toFixed(1) + 'L';
+            return '₹' + Math.round(v).toLocaleString('en-IN');
+        };
+        const P = (v, d = 1) => (v * 100).toFixed(d) + '%';
+
+        function fdTax(inc, reg, sc) {
+            if (inc <= 0) return 0;
+            let ti = inc;
+            if (sc && reg === 'old') ti = Math.max(0, inc - 50000);
+            let t = 0;
+            if (reg === 'new') {
+                if (ti > 1500000) t = 140000 + (ti - 1500000) * 0.30;
+                else if (ti > 1200000) t = 80000 + (ti - 1200000) * 0.20;
+                else if (ti > 1000000) t = 50000 + (ti - 1000000) * 0.15;
+                else if (ti > 700000) t = 20000 + (ti - 700000) * 0.10;
+                else if (ti > 300000) t = (ti - 300000) * 0.05;
+                if (inc <= 700000) t = 0;
+            } else {
+                const b = sc ? 300000 : 250000;
+                if (ti > 1000000) t = (sc ? 100000 : 112500) + (ti - 1000000) * 0.30;
+                else if (ti > 500000) t = (sc ? 10000 : 12500) + (ti - 500000) * 0.20;
+                else if (ti > b) t = (ti - b) * 0.05;
+                if (inc <= 500000) t = Math.max(0, t - (sc ? 10000 : 12500));
+            }
+            return t * 1.04;
+        }
+
+        function ltcg(g) {
+            if (g <= 0) return 0;
+            return Math.max(0, g - 125000) * 0.125 * 1.04;
+        }
+
+        function simHybrid(cfg, stress = false) {
+            let fd = cfg.fd, eq = cfg.eq, eqC = cfg.eq, cumT = 0;
+            const expBase = cfg.ex * 12, rows = [];
+            for (let y = 1; y <= cfg.yr; y++) {
+                const exp = expBase * Math.pow(1 + cfg.inf, y - 1);
+                let yt = 0, rT = 0, rA = 0, fDraw = 0;
+                const eqR = (stress && y <= 3) ? -0.30 : cfg.er;
+                eq = Math.max(0, eq * (1 + eqR));
+                const int = fd * cfg.fr, fT = fdTax(int, cfg.rg, cfg.sc), nI = int - fT;
+                yt += fT;
+                if (nI >= exp) {
+                    fd += nI - exp;
+                } else {
+                    const sh = exp - nI;
+                    if (fd >= sh) {
+                        fd -= sh;
+                        fDraw = sh;
+                    } else {
+                        fDraw = fd;
+                        fd = 0;
+                        const rem = sh - fDraw;
+                        if (eq > 0) {
+                            const gr = Math.max(0, (eq - eqC) / eq), g = rem * gr, eT = ltcg(g), sell = rem + eT;
+                            const f = Math.min(1, sell / eq);
+                            eqC = Math.max(0, eqC * (1 - f));
+                            eq = Math.max(0, eq - sell);
+                            yt += eT;
+                        }
+                    }
+                }
+                if (y % cfg.rb === 0 && eq > 0) {
+                    const sell = eq * cfg.rf, cS = eqC * cfg.rf, g = sell - cS;
+                    rT = ltcg(g);
+                    rA = sell - rT;
+                    eq -= sell;
+                    eqC = Math.max(0, eqC - cS);
+                    fd += rA;
+                    yt += rT;
+                }
+                cumT += yt;
+                const tw = Math.max(0, fd) + Math.max(0, eq);
+                rows.push({ y, fd: Math.max(0, fd), eq: Math.max(0, eq), tw, rTW: tw / Math.pow(1 + cfg.inf, y), int, fT, rT, yt, cumT, exp, fDraw, rA, wr: tw > 0 ? exp / tw : 999, isR: y % cfg.rb === 0 });
+                if (tw <= 0) break;
+            }
+            return rows;
+        }
+
+        function sim100Nifty(cfg) {
+            let eq = cfg.fd + cfg.eq, eqC = eq, cumT = 0;
+            const expBase = cfg.ex * 12, rows = [];
+            for (let y = 1; y <= cfg.yr; y++) {
+                const exp = expBase * Math.pow(1 + cfg.inf, y - 1);
+                eq *= (1 + cfg.er);
+                if (eq <= 0) { rows.push({ y, fd: 0, eq: 0, tw: 0, rTW: 0, yt: 0, cumT, exp, wr: 999 }); break; }
+                const gr = Math.max(0, (eq - eqC) / eq), g = exp * gr, tax = ltcg(g);
+                const out = exp + tax, f = Math.min(1, out / eq);
+                eqC = Math.max(0, eqC * (1 - f));
+                eq = Math.max(0, eq - out);
+                cumT += tax;
+                const tw = eq;
+                rows.push({ y, fd: 0, eq: tw, tw, rTW: tw / Math.pow(1 + cfg.inf, y), yt: tax, cumT, exp, wr: tw > 0 ? exp / tw : 999 });
+                if (eq <= 0) break;
+            }
+            return rows;
+        }
+
+        function sim6040(cfg) {
+            const tot = cfg.fd + cfg.eq;
+            let eq = tot * 0.6, fd = tot * 0.4, eqC = eq, cumT = 0;
+            const expBase = cfg.ex * 12, rows = [];
+            for (let y = 1; y <= cfg.yr; y++) {
+                const exp = expBase * Math.pow(1 + cfg.inf, y - 1);
+                let yt = 0;
+                eq *= (1 + cfg.er);
+                const int = fd * cfg.fr, fT = fdTax(int, cfg.rg, cfg.sc), nI = int - fT;
+                yt += fT;
+                if (nI >= exp) { fd += nI - exp; } else {
+                    const sh = exp - nI;
+                    if (fd >= sh) { fd -= sh; } else {
+                        const rem = sh - fd;
+                        fd = 0;
+                        if (eq > 0) { const gr = Math.max(0, (eq - eqC) / eq), g = rem * gr, eT = ltcg(g), sell = rem + eT; const f = Math.min(1, sell / eq); eqC = Math.max(0, eqC * (1 - f)); eq = Math.max(0, eq - sell); yt += eT; }
+                    }
+                }
+                const tw0 = eq + fd, tgE = tw0 * 0.6;
+                if (eq > tgE * 1.05) { const sell = eq - tgE, f = sell / eq, cS = eqC * f, g = sell - cS, eT = ltcg(g); yt += eT; eq -= sell; eqC -= cS; fd += sell - eT; } else if (eq < tgE * 0.95 && fd > tw0 * 0.4) { const buy = Math.min(tgE - eq, fd - tw0 * 0.4); if (buy > 0) { fd -= buy; eqC += buy; eq += buy; } }
+                cumT += yt;
+                const tw = Math.max(0, eq + fd);
+                rows.push({ y, fd: Math.max(0, fd), eq: Math.max(0, eq), tw, rTW: tw / Math.pow(1 + cfg.inf, y), yt, cumT, exp, wr: tw > 0 ? exp / tw : 999 });
+                if (tw <= 0) break;
+            }
+            return rows;
+        }
+
+        function simStress100(cfg) {
+            let eq = cfg.fd + cfg.eq, eqC = eq, cumT = 0;
+            const expBase = cfg.ex * 12, rows = [];
+            for (let y = 1; y <= cfg.yr; y++) {
+                const exp = expBase * Math.pow(1 + cfg.inf, y - 1);
+                const r = y <= 3 ? -0.30 : cfg.er;
+                eq = Math.max(0, eq * (1 + r));
+                if (eq <= 0) { rows.push({ y, tw: 0, rTW: 0, cumT, exp }); break; }
+                const gr = Math.max(0, (eq - eqC) / eq), g = exp * gr, tax = ltcg(g);
+                const out = exp + tax, f = Math.min(1, out / eq);
+                eqC = Math.max(0, eqC * (1 - f));
+                eq = Math.max(0, eq - out);
+                cumT += tax;
+                rows.push({ y, tw: eq, rTW: eq / Math.pow(1 + cfg.inf, y), yt: tax, cumT, exp, wr: eq > 0 ? exp / eq : 999 });
+                if (eq <= 0) break;
+            }
+            return rows;
+        }
+
+        function getCfg() {
+            return {
+                fd: +$('s-fd').value * 1e5, eq: +$('s-eq').value * 1e5, ex: +$('s-ex').value * 1000,
+                fr: +$('s-fr').value / 100, er: +$('s-er').value / 100, inf: +$('s-in').value / 100,
+                rb: +$('s-rb').value, rf: +$('s-rf').value / 100, yr: +$('s-yr').value,
+                rg: $('s-rg').value, sc: $('s-sc').checked
+            };
+        }
+
+        const charts = {};
+        function mk(id, config) { if (charts[id]) charts[id].destroy(); const el = $(id); if (!el) return; charts[id] = new Chart(el, config); }
+        const AX = { grid: { color: 'rgba(128,128,128,0.1)' }, ticks: { font: { size: 10 }, color: '#808080' } };
+        const AXCR = { ...AX, ticks: { ...AX.ticks, callback: v => C(v, 0) } };
+        const AXPCT = { ...AX, ticks: { ...AX.ticks, callback: v => v + '%' } };
+        const OPTS = (xax, yax) => ({ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: i => i.dataset.label + ': ' + C(i.raw) } } }, scales: { x: xax || AX, y: yax || AXCR } });
+        function pad(arr, len, key) { const r = arr.map(x => x[key] || 0); const last = r[r.length - 1] || 0; while (r.length < len) r.push(key === 'cumT' ? last : 0); return r; }
+
+        function render() {
+            const cfg = getCfg();
+            const h = simHybrid(cfg), n = sim100Nifty(cfg), b = sim6040(cfg);
+            const hs = simHybrid(cfg, true), ns = simStress100(cfg);
+            const L = cfg.yr, labs = Array.from({ length: L }, (_, i) => 'Y' + (i + 1));
+
+            const last = h[h.length - 1] || { tw: 0, rTW: 0, cumT: 0, wr: 0 };
+            const lastN = n[n.length - 1] || { tw: 0 };
+            const lastB = b[b.length - 1] || { tw: 0 };
+            const init = cfg.fd + cfg.eq, annE = cfg.ex * 12;
+            const wrCls = last.wr < 0.04 ? 'positive' : last.wr < 0.06 ? 'warning' : 'critical';
+
+            $('metrics-container').innerHTML = `
+                <div class="metric-card ${last.tw > annE * 15 ? 'positive' : last.tw > 0 ? 'warning' : 'critical'}">
+                    <div class="metric-label">Hybrid final NW (Y${h.length})</div>
+                    <div class="metric-value">${C(last.tw)}</div>
+                    <div class="metric-subtext">${((last.tw / init - 1) * 100).toFixed(0)}% from ₹${(init / 1e7).toFixed(1)}Cr</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Real value (today's ₹)</div>
+                    <div class="metric-value">${C(last.rTW)}</div>
+                    <div class="metric-subtext">At ${(cfg.inf * 100).toFixed(0)}% inflation p.a.</div>
+                </div>
+                <div class="metric-card ${wrCls}">
+                    <div class="metric-label">Withdrawal rate</div>
+                    <div class="metric-value">${P(Math.min(last.wr, 9.99))}</div>
+                    <div class="metric-subtext">${last.wr < 0.04 ? '✓ Sustainable' : last.wr < 0.06 ? '⚠ Elevated' : '✗ Critical'}</div>
+                </div>
+                <div class="metric-card warning">
+                    <div class="metric-label">Cumulative taxes</div>
+                    <div class="metric-value">${C(last.cumT)}</div>
+                    <div class="metric-subtext">${P(last.cumT / init)} of initial corpus</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">100% Nifty final NW</div>
+                    <div class="metric-value">${C(lastN.tw)}</div>
+                    <div class="metric-subtext">vs hybrid: ${lastN.tw > last.tw ? '+' : '-'}${C(Math.abs(lastN.tw - last.tw), 1)}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">60/40 final NW</div>
+                    <div class="metric-value">${C(lastB.tw)}</div>
+                    <div class="metric-subtext">vs hybrid: ${lastB.tw > last.tw ? '+' : '-'}${C(Math.abs(lastB.tw - last.tw), 1)}</div>
+                </div>
+            `;
+
+            let tableHTML = '<table class="data-table"><thead><tr><th>Yr</th><th>FD corpus</th><th>Equity</th><th>Total NW</th><th>Real NW</th><th>FD interest</th><th>Income tax</th><th>LTCG tax</th><th>Total tax</th><th>Annual exp.</th><th>FD drawdown</th><th>Rebal. inflow</th><th>WR%</th></tr></thead><tbody>';
+            const initWr = annE / init;
+            tableHTML += `<tr><td>0</td><td>${C(cfg.fd)}</td><td>${C(cfg.eq)}</td><td>${C(init)}</td><td>${C(init)}</td><td>₹0</td><td>₹0</td><td>₹0</td><td>₹0</td><td>${C(annE)}</td><td>—</td><td>—</td><td>${P(initWr)}</td></tr>`;
+            h.forEach(r => {
+                const cls = r.isR ? 'highlight-rebalance' : r.wr > 0.07 ? 'highlight-critical' : r.wr > 0.05 ? 'highlight-warning' : '';
+                tableHTML += `<tr class="${cls}"><td>${r.y}${r.isR ? '★' : ''}</td><td>${C(r.fd)}</td><td>${C(r.eq)}</td><td>${C(r.tw)}</td><td>${C(r.rTW)}</td><td>${C(r.int, 1)}</td><td>${C(r.fT, 1)}</td><td>${r.rT > 0 ? C(r.rT, 1) : '—'}</td><td>${C(r.yt, 1)}</td><td>${C(r.exp, 1)}</td><td>${r.fDraw > 0 ? C(r.fDraw, 1) : '—'}</td><td>${r.rA > 0 ? C(r.rA, 1) : '—'}</td><td>${P(Math.min(r.wr, 9.99))}</td></tr>`;
+            });
+            tableHTML += '</tbody></table>';
+            $('table-container').innerHTML = tableHTML;
+            $('table-note').textContent = '★ Rebalancing year (green). Yellow = WR 5–7%. Red = WR >7%. Real NW deflated at ' + P(cfg.inf) + ' p.a.';
+
+            mk('c1', { type: 'line', data: { labels: labs, datasets: [{ label: 'Total NW', data: pad(h, L, 'tw'), borderColor: '#1d9e75', borderWidth: 2.5, pointRadius: 0, fill: false, tension: 0.3 }, { label: 'FD', data: pad(h, L, 'fd'), borderColor: '#ef9f27', borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0.3, borderDash: [4, 3] }, { label: 'Equity', data: pad(h, L, 'eq'), borderColor: '#639922', borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0.3, borderDash: [2, 3] }] }, options: OPTS() });
+            const fdP = h.map(r => r.tw > 0 ? Math.round(r.fd / r.tw * 100) : 50);
+            const eqP = h.map(r => r.tw > 0 ? 100 - Math.round(r.fd / r.tw * 100) : 50);
+            mk('c2', { type: 'bar', data: { labels: labs, datasets: [{ label: 'FD', data: fdP, backgroundColor: '#ef9f2788', stack: 'a' }, { label: 'Equity', data: eqP, backgroundColor: '#63992288', stack: 'a' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ...AX, stacked: true }, y: { ...AXPCT, stacked: true, max: 100, min: 0 } } } });
+            mk('c3', { type: 'bar', data: { labels: labs, datasets: [{ label: 'FD income tax', data: pad(h, L, 'fT'), backgroundColor: '#d85a30aa', stack: 't' }, { label: 'LTCG', data: pad(h, L, 'rT'), backgroundColor: '#e24b4aaa', stack: 't' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: i => i.dataset.label + ': ' + C(i.raw) } } }, scales: { x: { ...AX, stacked: true }, y: { ...AXCR, stacked: true } } } });
+            mk('c4', { type: 'line', data: { labels: labs, datasets: [{ label: 'WR%', data: h.map(r => parseFloat((Math.min(r.wr, 0.5) * 100).toFixed(2))), borderColor: '#1d9e75', borderWidth: 2.5, pointRadius: 0, fill: false, tension: 0.3 }, { label: '5% threshold', data: Array(L).fill(5), borderColor: '#e24b4a', borderWidth: 1.5, pointRadius: 0, fill: false, borderDash: [5, 3] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: AX, y: { ...AXPCT, min: 0 } } } });
+            mk('c5', { type: 'line', data: { labels: labs, datasets: [{ label: 'Hybrid', data: pad(h, L, 'tw'), borderColor: '#1d9e75', borderWidth: 2.5, pointRadius: 0, fill: false, tension: 0.3 }, { label: '100% Nifty', data: pad(n, L, 'tw'), borderColor: '#7f77dd', borderWidth: 2, pointRadius: 0, fill: false, tension: 0.3, borderDash: [5, 2] }, { label: '60/40', data: pad(b, L, 'tw'), borderColor: '#378add', borderWidth: 2, pointRadius: 0, fill: false, tension: 0.3, borderDash: [2, 2] }] }, options: OPTS() });
+            mk('c6', { type: 'line', data: { labels: labs, datasets: [{ label: 'Hybrid', data: pad(h, L, 'rTW'), borderColor: '#1d9e75', borderWidth: 2.5, pointRadius: 0, fill: false, tension: 0.3 }, { label: '100% Nifty', data: pad(n, L, 'rTW'), borderColor: '#7f77dd', borderWidth: 2, pointRadius: 0, fill: false, tension: 0.3, borderDash: [5, 2] }, { label: '60/40', data: pad(b, L, 'rTW'), borderColor: '#378add', borderWidth: 2, pointRadius: 0, fill: false, tension: 0.3, borderDash: [2, 2] }] }, options: OPTS() });
+            mk('c7', { type: 'line', data: { labels: labs, datasets: [{ label: 'Hybrid', data: pad(h, L, 'cumT'), borderColor: '#1d9e75', borderWidth: 2.5, pointRadius: 0, fill: false, tension: 0.1 }, { label: '100% Nifty', data: pad(n, L, 'cumT'), borderColor: '#7f77dd', borderWidth: 2, pointRadius: 0, fill: false, tension: 0.1, borderDash: [5, 2] }, { label: '60/40', data: pad(b, L, 'cumT'), borderColor: '#378add', borderWidth: 2, pointRadius: 0, fill: false, tension: 0.1, borderDash: [2, 2] }] }, options: OPTS() });
+            const nomE = Array(h.length).fill(cfg.ex);
+            const realE = h.map(r => cfg.ex / Math.pow(1 + cfg.inf, r.y));
+            mk('c8', { type: 'line', data: { labels: h.map(r => 'Y' + r.y), datasets: [{ label: 'Nominal', data: nomE, borderColor: '#a32d2d99', borderWidth: 1.5, pointRadius: 0, fill: false }, { label: 'Real', data: realE, borderColor: '#808080', borderWidth: 2.5, pointRadius: 0, fill: false, tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: i => i.dataset.label + ': ₹' + Math.round(i.raw).toLocaleString('en-IN') } } }, scales: { x: AX, y: { ...AX, ticks: { ...AX.ticks, callback: v => '₹' + Math.round(v / 1000) + 'K' } } } } });
+            mk('c9', { type: 'line', data: { labels: labs, datasets: [{ label: 'Base', data: pad(h, L, 'tw'), borderColor: '#1d9e75', borderWidth: 2.5, pointRadius: 0, fill: false, tension: 0.3 }, { label: 'Stress', data: pad(hs, L, 'tw'), borderColor: '#e24b4a', borderWidth: 2, pointRadius: 0, fill: false, tension: 0.3, borderDash: [4, 2] }, { label: '100% Nifty Stress', data: pad(ns, L, 'tw'), borderColor: '#7f77dd', borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0.3, borderDash: [2, 3] }] }, options: OPTS() });
+            const mults = [0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3];
+            const deplYears = mults.map(m => { const c2 = { ...cfg, ex: cfg.ex * m }; const sim = simHybrid(c2); const dep = sim.findIndex(r => r.tw <= 0); return dep === -1 ? cfg.yr : dep + 1; });
+            mk('c10', { type: 'bar', data: { labels: mults.map(m => '₹' + Math.round(cfg.ex * m / 1000) + 'K/mo'), datasets: [{ label: 'Years', data: deplYears, backgroundColor: deplYears.map(y => y >= cfg.yr ? '#1d9e7588' : y >= 15 ? '#ef9f2788' : '#e24b4a88'), borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: i => i.raw >= cfg.yr ? 'Survives full horizon' : i.raw + ' years' } } }, scales: { x: AX, y: { ...AX, ticks: { ...AX.ticks, callback: v => v + ' yr' }, max: cfg.yr + 2, min: 0 } } } });
+
+            const stressLast = hs[hs.length - 1] || { tw: 0 };
+            const srDiff = last.tw > 0 ? ((stressLast.tw - last.tw) / last.tw * 100) : 0;
+            const taxH = last.cumT, taxN = lastN.cumT || 0, taxB = lastB.cumT || 0;
+            const survH = h.findIndex(r => r.tw <= 0) === -1 ? 'Survives full ' + cfg.yr + '-year horizon' : 'Depletes at year ' + (h.findIndex(r => r.tw <= 0) + 1);
+            const realMonth = cfg.ex / Math.pow(1 + cfg.inf, cfg.yr);
+
+            $('observations-container').innerHTML = `
+                <div class="observation-card ${last.wr < 0.04 ? 'positive' : last.wr < 0.07 ? 'warning' : 'critical'}">
+                    <div class="observation-title">Portfolio Sustainability</div>
+                    <div class="observation-value">${survH}</div>
+                    <div class="observation-text">Final WR is ${P(Math.min(last.wr, 9.99))}. ${last.wr < 0.04 ? 'Highly durable—well within safe withdrawal benchmarks.' : last.wr < 0.06 ? 'Approaching caution zone—consider reducing expenses or boosting equity.' : 'Unsustainable—FD principal is being eroded.'}</div>
+                </div>
+                <div class="observation-card ${taxH < taxN ? 'positive' : 'warning'}">
+                    <div class="observation-title">Tax Efficiency</div>
+                    <div class="observation-value">${C(taxH, 1)} total tax</div>
+                    <div class="observation-text">Hybrid ${taxH < taxN ? 'saves ' + C(taxN - taxH, 1) + ' vs pure Nifty' : 'pays ' + C(taxH - taxN, 1) + ' more than pure Nifty'}. New tax regime 87A rebate makes FD income tax-free up to ₹7L.</div>
+                </div>
+                <div class="observation-card neutral">
+                    <div class="observation-title">Inflation Impact</div>
+                    <div class="observation-value">₹${Math.round(cfg.ex / 1000)}K → ₹${Math.round(realMonth / 1000)}K</div>
+                    <div class="observation-text">At ${P(cfg.inf)} inflation, your monthly expense's purchasing power erodes significantly over ${cfg.yr} years. Real corpus value is ${C(last.rTW)} (${last.rTW > init ? 'above' : 'below'} initial in real terms).</div>
+                </div>
+                <div class="observation-card ${Math.abs(srDiff) < 15 ? 'positive' : 'critical'}">
+                    <div class="observation-title">Sequence-of-Return Risk</div>
+                    <div class="observation-value">${srDiff.toFixed(0)}% impact</div>
+                    <div class="observation-text">A 30% Nifty crash in years 1–3 leaves hybrid at ${C(stressLast.tw)} vs ${C(last.tw)} base. FD cushion avoids forced sales at depressed prices.</div>
+                </div>
+                <div class="observation-card neutral">
+                    <div class="observation-title">Rebalancing Strategy</div>
+                    <div class="observation-value">Every ${cfg.rb} yrs, sell ${P(cfg.rf)} equity</div>
+                    <div class="observation-text">Each rebalance locks in gains and reduces concentration risk. LTCG above ₹1.25L is taxed at 12.5%—consider staggering across financial years to double-dip exemptions.</div>
+                </div>
+                <div class="observation-card ${lastN.tw > last.tw ? 'warning' : 'positive'}">
+                    <div class="observation-title">vs 100% Nifty</div>
+                    <div class="observation-value">Hybrid ${last.tw >= lastN.tw ? 'ahead' : 'behind'} by ${C(Math.abs(lastN.tw - last.tw), 1)}</div>
+                    <div class="observation-text">100% Nifty maximizes growth but amplifies volatility. Hybrid sacrifices upside for stability—ideal for retirees.</div>
+                </div>
+            `;
+        }
+
+        function switchTab(index) {
+            document.querySelectorAll('.tab-button').forEach((btn, i) => btn.classList.toggle('active', i === index));
+            document.querySelectorAll('.tab-content').forEach((tab, i) => tab.classList.toggle('active', i === index));
+        }
+
+        let tmr;
+        function sched() { clearTimeout(tmr); tmr = setTimeout(render, 40); }
+        const sliders = [
+            ['s-fd', 'l-fd', v => { const l = +v; return l >= 100 ? '₹' + (l / 100).toFixed(2) + 'Cr' : '₹' + l + 'L'; }],
+            ['s-eq', 'l-eq', v => { const l = +v; return l >= 100 ? '₹' + (l / 100).toFixed(2) + 'Cr' : '₹' + l + 'L'; }],
+            ['s-ex', 'l-ex', v => '₹' + Math.round(+v) + 'K'],
+            ['s-fr', 'l-fr', v => (+v).toFixed(1) + '%'],
+            ['s-er', 'l-er', v => (+v).toFixed(1) + '%'],
+            ['s-in', 'l-in', v => (+v).toFixed(1) + '%'],
+            ['s-rb', 'l-rb', v => v + ' yrs'],
+            ['s-rf', 'l-rf', v => v + '%'],
+            ['s-yr', 'l-yr', v => v + ' yrs'],
+        ];
+        sliders.forEach(([id, lbl, fmt]) => {
+            const el = $(id);
+            el.addEventListener('input', () => { $(lbl).textContent = fmt(el.value); sched(); });
+        });
+        $('s-rg').addEventListener('change', sched);
+        $('s-sc').addEventListener('change', sched);
+        render();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1067 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Three-bucket retirement strategy simulator</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --color-background-primary: #1a1a1a;
+      --color-background-secondary: #2a2a2a;
+      --color-background-tertiary: #333333;
+      --color-background-info: #378ADD;
+      --color-text-primary: #ffffff;
+      --color-text-secondary: #b0b0b0;
+      --color-text-tertiary: #808080;
+      --color-text-info: #ffffff;
+      --color-text-success: #4ade80;
+      --color-text-warning: #fbbf24;
+      --color-text-danger: #f87171;
+      --color-border-primary: #404040;
+      --color-border-secondary: #404040;
+      --color-border-info: #378ADD;
+      --border-radius-md: 8px;
+      --border-radius-lg: 12px;
+    }
+
+    body {
+      background: var(--color-background-primary);
+      color: var(--color-text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.5;
+    }
+
+    input[type="number"], input[type="range"] {
+      background: var(--color-background-tertiary);
+      color: var(--color-text-primary);
+      border: 1px solid var(--color-border-primary);
+      border-radius: var(--border-radius-md);
+      padding: 8px 12px;
+      font-size: 14px;
+    }
+
+    input[type="number"]:focus, input[type="range"]:focus {
+      outline: none;
+      border-color: var(--color-border-info);
+    }
+
+    input[type="range"] {
+      padding: 0;
+      height: 6px;
+      -webkit-appearance: none;
+      appearance: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--color-background-info);
+      cursor: pointer;
+      border: 2px solid var(--color-background-primary);
+      box-shadow: 0 0 4px rgba(55, 138, 221, 0.3);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--color-background-info);
+      cursor: pointer;
+      border: 2px solid var(--color-background-primary);
+      box-shadow: 0 0 4px rgba(55, 138, 221, 0.3);
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+
+    .bkt-card {
+      background: var(--color-background-secondary);
+      border-radius: var(--border-radius-md);
+      padding: 14px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--color-border-primary);
+    }
+
+    .bkt-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+    }
+
+    .b1c::before { background: #378ADD; }
+    .b2c::before { background: #1D9E75; }
+    .b3c::before { background: #D85A30; }
+    .bwc::before { background: var(--color-border-secondary); }
+
+    .irow {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .irow input[type="number"] {
+      flex: 1;
+      min-width: 0;
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    .sym {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      min-width: 16px;
+    }
+
+    .rrow {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .rrow label {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      min-width: 140px;
+      flex-shrink: 0;
+    }
+
+    .rrow input[type="range"] {
+      flex: 1;
+    }
+
+    .rval {
+      font-size: 13px;
+      font-weight: 500;
+      min-width: 50px;
+      text-align: right;
+      color: var(--color-text-primary);
+    }
+
+    .mc {
+      background: var(--color-background-secondary);
+      border-radius: var(--border-radius-md);
+      padding: 16px;
+      border: 1px solid var(--color-border-primary);
+    }
+
+    .ml {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .mv {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+    }
+
+    .mbtn {
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: var(--border-radius-md);
+      border: 1px solid var(--color-border-secondary);
+      background: transparent;
+      color: var(--color-text-secondary);
+      transition: all 0.2s ease;
+    }
+
+    .mbtn:hover {
+      border-color: var(--color-border-info);
+      color: var(--color-text-primary);
+    }
+
+    .mbtn.act {
+      background: var(--color-background-info);
+      color: var(--color-text-info);
+      border-color: var(--color-background-info);
+    }
+
+    .li {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--color-text-secondary);
+    }
+
+    .ld {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .tooltip-text {
+      visibility: hidden;
+      width: 220px;
+      background-color: rgba(0, 0, 0, 0.95);
+      color: #fff;
+      text-align: left;
+      padding: 10px;
+      border-radius: 6px;
+      position: fixed;
+      z-index: 10000;
+      font-size: 11px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
+      line-height: 1.4;
+    }
+
+    .tooltip-text::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: rgba(0, 0, 0, 0.95) transparent transparent transparent;
+    }
+
+    .tooltip-container:hover .tooltip-text {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .tooltip-container {
+      position: relative;
+      display: inline-block;
+      cursor: help;
+    }
+
+    .tooltip-icon {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      background: var(--color-background-info);
+      color: var(--color-text-info);
+      border-radius: 50%;
+      text-align: center;
+      line-height: 16px;
+      font-size: 12px;
+      font-weight: bold;
+      margin-left: 4px;
+    }
+
+    .preset-btn {
+      padding: 6px 12px;
+      font-size: 12px;
+      background: var(--color-background-tertiary);
+      color: var(--color-text-secondary);
+      border: 1px solid var(--color-border-primary);
+      border-radius: var(--border-radius-md);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .preset-btn:hover {
+      background: var(--color-background-info);
+      color: var(--color-text-info);
+      border-color: var(--color-border-info);
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 12px;
+      margin-bottom: 1.5rem;
+    }
+
+    .metric-card {
+      background: var(--color-background-secondary);
+      border-radius: var(--border-radius-md);
+      padding: 12px;
+      border: 1px solid var(--color-border-primary);
+    }
+
+    .metric-label {
+      font-size: 11px;
+      color: var(--color-text-tertiary);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .metric-value {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+    }
+
+    .charts-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 1.5rem;
+    }
+
+    .chart-wrapper {
+      background: var(--color-background-secondary);
+      border-radius: var(--border-radius-lg);
+      padding: 1rem;
+      border: 1px solid var(--color-border-primary);
+      position: relative;
+    }
+
+    .chart-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin-bottom: 12px;
+    }
+
+    .breakdown-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 1rem;
+    }
+
+    .breakdown-table th {
+      background: var(--color-background-tertiary);
+      color: var(--color-text-secondary);
+      padding: 10px;
+      text-align: left;
+      font-weight: 600;
+      border-bottom: 1px solid var(--color-border-primary);
+    }
+
+    .breakdown-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--color-border-primary);
+      color: var(--color-text-secondary);
+    }
+
+    .breakdown-table tr:hover {
+      background: var(--color-background-tertiary);
+    }
+
+    .breakdown-table .numeric {
+      text-align: right;
+      font-family: 'Monaco', 'Courier New', monospace;
+    }
+
+    .tab-buttons {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--color-border-primary);
+    }
+
+    .tab-btn {
+      padding: 10px 16px;
+      background: transparent;
+      color: var(--color-text-secondary);
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn.active {
+      color: var(--color-text-primary);
+      border-bottom-color: var(--color-background-info);
+    }
+
+    .tab-btn:hover {
+      color: var(--color-text-primary);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .scenario-controls {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .scenario-input {
+      flex: 1;
+      min-width: 150px;
+      padding: 8px 12px;
+      background: var(--color-background-tertiary);
+      color: var(--color-text-primary);
+      border: 1px solid var(--color-border-primary);
+      border-radius: var(--border-radius-md);
+      font-size: 13px;
+    }
+
+    .scenario-list {
+      background: var(--color-background-secondary);
+      border-radius: var(--border-radius-md);
+      border: 1px solid var(--color-border-primary);
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .scenario-item {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--color-border-primary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .scenario-item:hover {
+      background: var(--color-background-tertiary);
+    }
+
+    .scenario-item.selected {
+      background: var(--color-background-tertiary);
+      border-left: 3px solid var(--color-background-info);
+    }
+
+    .scenario-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .scenario-btn-small {
+      padding: 4px 8px;
+      background: transparent;
+      color: var(--color-text-secondary);
+      border: 1px solid var(--color-border-primary);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+      transition: all 0.2s ease;
+    }
+
+    .scenario-btn-small:hover {
+      color: var(--color-text-danger);
+      border-color: var(--color-text-danger);
+    }
+
+    .toggle-bucket-btn {
+      padding: 6px 10px;
+      font-size: 11px;
+      background: transparent;
+      color: var(--color-text-secondary);
+      border: 1px solid var(--color-border-primary);
+      border-radius: var(--border-radius-md);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .toggle-bucket-btn.hidden {
+      opacity: 0.5;
+    }
+
+    .toggle-bucket-btn:hover {
+      border-color: var(--color-border-info);
+      color: var(--color-text-primary);
+    }
+
+    @media (max-width: 768px) {
+      .charts-container {
+        grid-template-columns: 1fr;
+      }
+
+      .metrics-grid {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      }
+
+      .rrow {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .rrow label {
+        min-width: auto;
+        margin-bottom: 6px;
+      }
+
+      .rrow input[type="range"] {
+        width: 100%;
+      }
+
+      div[style*="max-width: 1200px"] {
+        padding: 1rem !important;
+      }
+
+      .breakdown-table {
+        font-size: 11px;
+      }
+
+      .breakdown-table th, .breakdown-table td {
+        padding: 6px 8px;
+      }
+
+      .scenario-controls {
+        flex-direction: column;
+      }
+
+      .scenario-input {
+        min-width: auto;
+      }
+    }
+
+    @media (max-width: 480px) {
+      div[style*="display: grid; grid-template-columns: repeat(auto-fit"] {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h2 class="sr-only">Three-bucket retirement strategy simulator — shows projected bucket balances and income over your chosen time horizon.</h2>
+
+<div style="padding: 2rem 1rem; max-width: 1200px; margin: 0 auto;">
+
+<!-- Presets Section -->
+<div style="margin-bottom: 1.5rem;">
+  <div style="font-size: 13px; color: var(--color-text-secondary); margin-bottom: 10px; font-weight: 600;">Quick Presets</div>
+  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+    <button class="preset-btn" onclick="loadPreset('conservative')">Conservative</button>
+    <button class="preset-btn" onclick="loadPreset('moderate')">Moderate</button>
+    <button class="preset-btn" onclick="loadPreset('aggressive')">Aggressive</button>
+  </div>
+</div>
+
+<!-- Bucket Cards -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 1.5rem;">
+  <div class="bkt-card b1c">
+    <div style="display: flex; align-items: center;">
+      <div style="font-size: 13px; color: var(--color-text-secondary); font-weight: 600;">Bucket 1 — Cash</div>
+      <div class="tooltip-container" style="margin-left: auto;">
+        <span class="tooltip-icon">?</span>
+        <span class="tooltip-text">Fixed deposits, liquid funds, savings accounts. Lowest volatility, 5-6% returns.</span>
+      </div>
+    </div>
+    <div class="irow"><span class="sym">₹</span><input type="number" id="b1" value="20" min="0" step="1"/><span class="sym">L</span></div>
+    <div style="font-size: 11px; color: var(--color-text-tertiary); margin-top: 6px;">FD · liquid funds · savings</div>
+  </div>
+  <div class="bkt-card b2c">
+    <div style="display: flex; align-items: center;">
+      <div style="font-size: 13px; color: var(--color-text-secondary); font-weight: 600;">Bucket 2 — Income</div>
+      <div class="tooltip-container">
+        <span class="tooltip-icon">?</span>
+        <span class="tooltip-text">Debt funds, bonds, PPF. Medium stability, 7-8% returns.</span>
+      </div>
+    </div>
+    <div class="irow"><span class="sym">₹</span><input type="number" id="b2" value="50" min="0" step="1"/><span class="sym">L</span></div>
+    <div style="font-size: 11px; color: var(--color-text-tertiary); margin-top: 6px;">Debt funds · bonds · PPF</div>
+  </div>
+  <div class="bkt-card b3c">
+    <div style="display: flex; align-items: center;">
+      <div style="font-size: 13px; color: var(--color-text-secondary); font-weight: 600;">Bucket 3 — Growth</div>
+      <div class="tooltip-container">
+        <span class="tooltip-icon">?</span>
+        <span class="tooltip-text">Equity MFs, index funds. Higher volatility, 11-12% returns.</span>
+      </div>
+    </div>
+    <div class="irow"><span class="sym">₹</span><input type="number" id="b3" value="130" min="0" step="1"/><span class="sym">L</span></div>
+    <div style="font-size: 11px; color: var(--color-text-tertiary); margin-top: 6px;">Equity MFs · index funds</div>
+  </div>
+  <div class="bkt-card bwc">
+    <div style="display: flex; align-items: center;">
+      <div style="font-size: 13px; color: var(--color-text-secondary); font-weight: 600;">Annual withdrawal</div>
+      <div class="tooltip-container">
+        <span class="tooltip-icon">?</span>
+        <span class="tooltip-text">Planned annual withdrawal amount. Increases with inflation each year.</span>
+      </div>
+    </div>
+    <div class="irow"><span class="sym">₹</span><input type="number" id="wdr" value="12" min="0.5" step="0.5"/><span class="sym">L/yr</span></div>
+    <div style="font-size: 11px; color: var(--color-text-tertiary); margin-top: 6px;" id="mnt-note">= ₹1.0L/month</div>
+  </div>
+</div>
+
+<div style="font-size: 13px; color: var(--color-text-secondary); margin-bottom: 1.5rem; display: flex; gap: 24px; flex-wrap: wrap;">
+  <span>Total corpus: <strong id="corp-total" style="color: var(--color-text-primary); font-weight: 600;">₹200L</strong></span>
+  <span>Initial withdrawal rate: <strong id="wrate" style="color: var(--color-text-primary); font-weight: 600;">6.0%</strong></span>
+</div>
+
+<!-- Rates & Settings Section -->
+<div style="background: var(--color-background-secondary); border-radius: var(--border-radius-lg); padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid var(--color-border-primary);">
+  <div style="font-size: 14px; font-weight: 600; margin-bottom: 16px; color: var(--color-text-primary); display: flex; align-items: center;">
+    Rates & settings
+    <div class="tooltip-container" style="margin-left: 6px;">
+      <span class="tooltip-icon">?</span>
+      <span class="tooltip-text">Set expected annual returns for each bucket and inflation rate.</span>
+    </div>
+  </div>
+  <div class="rrow"><label>Bucket 1 return</label><input type="range" id="r1" min="1" max="9" step="0.5" value="5.5"/><span class="rval" id="r1o">5.5%</span></div>
+  <div class="rrow"><label>Bucket 2 return</label><input type="range" id="r2" min="3" max="14" step="0.5" value="7.5"/><span class="rval" id="r2o">7.5%</span></div>
+  <div class="rrow"><label>Bucket 3 return</label><input type="range" id="r3" min="5" max="20" step="0.5" value="11"/><span class="rval" id="r3o">11.0%</span></div>
+  <div class="rrow"><label>Inflation</label><input type="range" id="inf" min="2" max="10" step="0.5" value="6"/><span class="rval" id="info">6.0%</span></div>
+  <div class="rrow" style="margin-bottom: 0;"><label>Time horizon</label><input type="range" id="yrs" min="10" max="50" step="1" value="35"/><span class="rval" id="yrso">35 yrs</span></div>
+</div>
+
+<!-- Controls -->
+<div style="display: flex; gap: 10px; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap;">
+  <button class="mbtn act" id="btn-d" onclick="setMode('d')">Deterministic</button>
+  <button class="mbtn" id="btn-m" onclick="setMode('m')">Monte Carlo (500 runs)</button>
+  <button onclick="runSim()" style="margin-left: auto; padding: 8px 24px; font-size: 13px; font-weight: 600; background: var(--color-background-info); color: var(--color-text-info); border: 1px solid var(--color-border-info); border-radius: var(--border-radius-md); cursor: pointer; transition: all 0.2s ease;">Simulate ↗</button>
+</div>
+
+<!-- Key Metrics -->
+<div style="background: var(--color-background-secondary); border-radius: var(--border-radius-lg); padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid var(--color-border-primary);">
+  <div style="font-size: 14px; font-weight: 600; margin-bottom: 16px; color: var(--color-text-primary);">Results</div>
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-label">Funds last</div>
+      <div class="metric-value" id="myl">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Success rate</div>
+      <div class="metric-value" id="msr" style="display: none;">—</div>
+      <div style="font-size: 12px; color: var(--color-text-secondary);" id="msr-placeholder">Deterministic mode</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Total income</div>
+      <div class="metric-value" id="mti">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Ending balance</div>
+      <div class="metric-value" id="meb">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Safe withdrawal rate</div>
+      <div class="metric-value" id="swr" style="font-size: 20px;">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Avg annual withdrawal</div>
+      <div class="metric-value" id="aaw" style="font-size: 18px;">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Portfolio CAGR</div>
+      <div class="metric-value" id="cagr" style="font-size: 20px;">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Max withdrawal ratio</div>
+      <div class="metric-value" id="mwr" style="font-size: 18px;">—</div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Section -->
+<div class="charts-container">
+  <div class="chart-wrapper">
+    <div class="chart-title">Portfolio Allocation (Initial)</div>
+    <div style="position: relative; height: 200px;">
+      <canvas id="allocch" role="img" aria-label="Pie chart showing initial portfolio allocation">Run simulation to see results.</canvas>
+    </div>
+  </div>
+  <div class="chart-wrapper">
+    <div style="display: flex; align-items: center; margin-bottom: 12px;">
+      <div class="chart-title" style="margin-bottom: 0;">Bucket Balances Over Time</div>
+      <div style="margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap;" id="toggles"></div>
+    </div>
+    <div style="position: relative; height: 200px;">
+      <canvas id="simch" role="img" aria-label="Line chart showing projected bucket balances over time">Run simulation to see results.</canvas>
+    </div>
+  </div>
+</div>
+
+<div style="display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; padding: 0 4px;" id="leg"></div>
+
+<!-- Scenario Management & Breakdown -->
+<div style="background: var(--color-background-secondary); border-radius: var(--border-radius-lg); padding: 1.5rem; border: 1px solid var(--color-border-primary);">
+  <div class="tab-buttons">
+    <button class="tab-btn active" onclick="switchTab('breakdown')">Year-by-Year Breakdown</button>
+    <button class="tab-btn" onclick="switchTab('scenarios')">Manage Scenarios</button>
+  </div>
+
+  <!-- Year-by-Year Breakdown Tab -->
+  <div id="breakdown" class="tab-content active">
+    <table class="breakdown-table">
+      <thead>
+        <tr>
+          <th>Year</th>
+          <th class="numeric">Withdrawal</th>
+          <th class="numeric">Bucket 1</th>
+          <th class="numeric">Bucket 2</th>
+          <th class="numeric">Bucket 3</th>
+          <th class="numeric">Total</th>
+        </tr>
+      </thead>
+      <tbody id="breakdown-tbody">
+        <tr><td colspan="6" style="text-align: center; color: var(--color-text-tertiary); padding: 20px;">Run simulation to see breakdown</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Scenario Management Tab -->
+  <div id="scenarios" class="tab-content">
+    <div class="scenario-controls">
+      <input type="text" id="scenario-name" class="scenario-input" placeholder="Scenario name (e.g., 'Conservative Plan')">
+      <button class="mbtn act" onclick="saveScenario()">Save Current</button>
+    </div>
+    <div id="scenario-list" class="scenario-list">
+      <div style="padding: 16px; text-align: center; color: var(--color-text-tertiary); font-size: 12px;">No scenarios saved yet</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+let mode='d', ch=null, allocCh=null, debTimer=null, lastSimData=null, visibleBuckets={1:true,2:true,3:true}, currentScenario=null;
+const presets={conservative:{r1:4.5,r2:6.5,r3:9,inf:5.5,b1:40,b2:50,b3:10,wdr:10},moderate:{r1:5.5,r2:7.5,r3:11,inf:6,b1:20,b2:50,b3:130,wdr:12},aggressive:{r1:6,r2:8.5,r3:13,inf:6.5,b1:10,b2:30,b3:160,wdr:14}};
+const scenarios=JSON.parse(localStorage.getItem('scenarios'))||{};
+
+const sliderCfg=[['r1','r1o',v=>v.toFixed(1)+'%'],['r2','r2o',v=>v.toFixed(1)+'%'],['r3','r3o',v=>v.toFixed(1)+'%'],['inf','info',v=>v.toFixed(1)+'%'],['yrs','yrso',v=>v+' yrs']];
+sliderCfg.forEach(([id,out,fn])=>{
+  const el=document.getElementById(id), outel=document.getElementById(out);
+  el.addEventListener('input',()=>{outel.textContent=fn(parseFloat(el.value));debouncedRun();});
+});
+['b1','b2','b3','wdr'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{updateCorpus();debouncedRun();}));
+
+function debouncedRun(){clearTimeout(debTimer);debTimer=setTimeout(runSim,350);}
+
+function loadPreset(preset){
+  const p=presets[preset];
+  if(!p) return;
+  document.getElementById('b1').value=p.b1;
+  document.getElementById('b2').value=p.b2;
+  document.getElementById('b3').value=p.b3;
+  document.getElementById('r1').value=p.r1;
+  document.getElementById('r2').value=p.r2;
+  document.getElementById('r3').value=p.r3;
+  document.getElementById('inf').value=p.inf;
+  document.getElementById('wdr').value=p.wdr;
+  updateCorpus();
+  sliderCfg.forEach(([id,out,fn])=>document.getElementById(out).textContent=fn(parseFloat(document.getElementById(id).value)));
+  runSim();
+}
+
+function updateCorpus(){
+  const b1=gv('b1'),b2=gv('b2'),b3=gv('b3'),w=gv('wdr');
+  const t=b1+b2+b3;
+  document.getElementById('corp-total').textContent=fmtL(t);
+  document.getElementById('wrate').textContent=t>0?(w/t*100).toFixed(1)+'%':'—';
+  document.getElementById('mnt-note').textContent='= ₹'+(w/12).toFixed(2)+'L/month';
+}
+
+function setMode(m){
+  mode=m;
+  document.getElementById('btn-d').classList.toggle('act',m==='d');
+  document.getElementById('btn-m').classList.toggle('act',m==='m');
+  document.getElementById('msr-placeholder').style.display=m==='d'?'block':'none';
+  document.getElementById('msr').style.display=m==='m'?'block':'none';
+  runSim();
+}
+
+function switchTab(tab){
+  document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById(tab).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function saveScenario(){
+  const name=document.getElementById('scenario-name').value.trim();
+  if(!name){alert('Please enter a scenario name');return;}
+  scenarios[name]={b1:gv('b1'),b2:gv('b2'),b3:gv('b3'),w:gv('wdr'),r1:gv('r1'),r2:gv('r2'),r3:gv('r3'),inf:gv('inf'),yrs:parseInt(document.getElementById('yrs').value)};
+  localStorage.setItem('scenarios',JSON.stringify(scenarios));
+  document.getElementById('scenario-name').value='';
+  renderScenarios();
+}
+
+function loadScenario(name){
+  const s=scenarios[name];
+  if(!s) return;
+  document.getElementById('b1').value=s.b1;
+  document.getElementById('b2').value=s.b2;
+  document.getElementById('b3').value=s.b3;
+  document.getElementById('wdr').value=s.w;
+  document.getElementById('r1').value=s.r1;
+  document.getElementById('r2').value=s.r2;
+  document.getElementById('r3').value=s.r3;
+  document.getElementById('inf').value=s.inf;
+  document.getElementById('yrs').value=s.yrs;
+  updateCorpus();
+  sliderCfg.forEach(([id,out,fn])=>document.getElementById(out).textContent=fn(parseFloat(document.getElementById(id).value)));
+  document.getElementById('yrso').textContent=s.yrs+' yrs';
+  currentScenario=name;
+  renderScenarios();
+  runSim();
+}
+
+function deleteScenario(name){
+  if(confirm('Delete scenario '+name+'?')){delete scenarios[name];localStorage.setItem('scenarios',JSON.stringify(scenarios));renderScenarios();}}
+
+function renderScenarios(){
+  const list=document.getElementById('scenario-list');
+  const items=Object.keys(scenarios);
+  if(items.length===0){list.innerHTML='<div style="padding: 16px; text-align: center; color: var(--color-text-tertiary); font-size: 12px;">No scenarios saved yet</div>';return;}
+  list.innerHTML=items.map(name=>`<div class="scenario-item ${currentScenario===name?'selected':''}" onclick="loadScenario('${name}')"><span>${name}</span><div class="scenario-actions"><button class="scenario-btn-small" onclick="event.stopPropagation();deleteScenario('${name}')">Delete</button></div></div>`).join('');
+}
+
+function randn(){
+  let u=0,v=0;
+  while(!u)u=Math.random();while(!v)v=Math.random();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+}
+
+function sim(b1i,b2i,b3i,w0,infl,r1,r2,r3,yrs,noisy){
+  let b=[b1i,b2i,b3i],data=[],inc=0,depY=null;
+  const vols=[0.01,0.04,0.18],rates=[r1/100,r2/100,r3/100];
+  for(let y=0;y<yrs;y++){
+    const w=w0*Math.pow(1+infl/100,y);
+    for(let i=0;i<3;i++) b[i]*=(1+(rates[i]+(noisy?randn()*vols[i]:0)));
+    const avail=b[0]+b[1]+b[2];
+    const actualW=Math.min(w,avail);
+    b[0]-=actualW; inc+=actualW;
+    if(b[1]<2*w&&b[2]>0){const tx=Math.min(Math.max(0,5*w-b[1]),b[2]);b[1]+=tx;b[2]-=tx;}
+    if(b[0]<w&&b[1]>0){const tx=Math.min(Math.max(0,2*w-b[0]),b[1]);b[0]+=tx;b[1]-=tx;}
+    if(b[0]<0&&b[2]>0){const tx=Math.min(-b[0],b[2]);b[0]+=tx;b[2]-=tx;}
+    b=b.map(v=>Math.max(0,v));
+    const tot=b[0]+b[1]+b[2];
+    data.push({y:y+1,b:[...b],tot,w:actualW});
+    if(tot<=0&&!depY){depY=y+1;for(let r=y+1;r<yrs;r++)data.push({y:r+1,b:[0,0,0],tot:0,w:0});break;}
+  }
+  return{data,inc,depY,end:b[0]+b[1]+b[2]};
+}
+
+function gv(id){return parseFloat(document.getElementById(id).value)||0;}
+
+function fmtL(v){
+  if(v>=100)return '₹'+(v/100).toFixed(2)+' Cr';
+  if(v>=1)return '₹'+v.toFixed(2)+'L';
+  return '₹'+(v*100).toFixed(1)+'K';
+}
+
+function pct(arr,p){
+  const s=[...arr].sort((a,b)=>a-b);
+  return s[Math.max(0,Math.min(Math.floor(p/100*(s.length-1)),s.length-1))];
+}
+
+function setLegend(items){
+  document.getElementById('leg').innerHTML=items.map(([col,lbl])=>`<div class="li"><span class="ld" style="background:${col}"></span>${lbl}</div>`).join('');
+}
+
+function renderAllocationChart(b1,b2,b3){
+  if(allocCh)allocCh.destroy();
+  allocCh=new Chart(document.getElementById('allocch'),{
+    type:'doughnut',
+    data:{
+      labels:['Bucket 1','Bucket 2','Bucket 3'],
+      datasets:[{data:[b1,b2,b3],backgroundColor:['#378ADD','#1D9E75','#D85A30'],borderColor:'var(--color-background-primary)',borderWidth:2}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'bottom',labels:{color:'#b0b0b0',font:{size:11},padding:12}},
+        tooltip:{callbacks:{label:ctx=>{const total=ctx.dataset.data.reduce((a,b)=>a+b,0);return ctx.label+': '+fmtL(ctx.raw)+' ('+((ctx.raw/total)*100).toFixed(1)+'%)'}}}
+      }
+    }
+  });
+}
+
+function renderBreakdownTable(data, initialB1, initialB2, initialB3){
+  const tbody=document.getElementById('breakdown-tbody');
+  const total=initialB1+initialB2+initialB3;
+  const year0Row=`
+    <tr style="background: var(--color-background-tertiary); font-weight: 500;">
+      <td><strong>Year 0</strong></td>
+      <td class="numeric">₹0K</td>
+      <td class="numeric">${fmtL(initialB1)}</td>
+      <td class="numeric">${fmtL(initialB2)}</td>
+      <td class="numeric">${fmtL(initialB3)}</td>
+      <td class="numeric"><strong>${fmtL(total)}</strong></td>
+    </tr>
+  `;
+  const rows=data.map(d=>`
+    <tr>
+      <td>Year ${d.y}</td>
+      <td class="numeric">${fmtL(d.w)}</td>
+      <td class="numeric">${fmtL(d.b[0])}</td>
+      <td class="numeric">${fmtL(d.b[1])}</td>
+      <td class="numeric">${fmtL(d.b[2])}</td>
+      <td class="numeric"><strong>${fmtL(d.tot)}</strong></td>
+    </tr>
+  `).join('');
+  tbody.innerHTML=year0Row+rows;
+}
+
+function runSim(){
+  const v={b1:gv('b1'),b2:gv('b2'),b3:gv('b3'),w:gv('wdr'),r1:gv('r1'),r2:gv('r2'),r3:gv('r3'),inf:gv('inf'),yrs:parseInt(document.getElementById('yrs').value)||35};
+  const labels=Array.from({length:v.yrs},(_,i)=>'Yr '+(i+1));
+  let datasets=[],ylStr,ti,eb;
+
+  renderAllocationChart(v.b1,v.b2,v.b3);
+
+  if(mode==='d'){
+    const s=sim(v.b1,v.b2,v.b3,v.w,v.inf,v.r1,v.r2,v.r3,v.yrs,false);
+    const d=s.data;
+    while(d.length<v.yrs)d.push({y:d.length+1,b:[0,0,0],tot:0,w:0});
+    const pad=d.slice(0,v.yrs);
+    lastSimData=pad;
+    renderBreakdownTable(pad,v.b1,v.b2,v.b3);
+
+    datasets=[
+      {label:'Bucket 1',data:pad.map(x=>Math.round(x.b[0]*10)/10),borderColor:'#378ADD',backgroundColor:'rgba(55,138,221,0.13)',fill:true,tension:0.35,borderWidth:2,pointRadius:0,hidden:!visibleBuckets[1]},
+      {label:'Bucket 2',data:pad.map(x=>Math.round(x.b[1]*10)/10),borderColor:'#1D9E75',backgroundColor:'rgba(29,158,117,0.1)',fill:true,tension:0.35,borderWidth:2,pointRadius:0,hidden:!visibleBuckets[2]},
+      {label:'Bucket 3',data:pad.map(x=>Math.round(x.b[2]*10)/10),borderColor:'#D85A30',backgroundColor:'rgba(216,90,48,0.08)',fill:true,tension:0.35,borderWidth:2,pointRadius:0,hidden:!visibleBuckets[3]},
+    ];
+    ylStr=s.depY?s.depY+' yrs':(v.yrs+'+ yrs');
+    const isGood=!s.depY;
+    document.getElementById('myl').style.color=isGood?'var(--color-text-success)':'var(--color-text-danger)';
+    ti=s.inc; eb=s.end;
+    document.getElementById('msr-placeholder').style.display='block';
+    setLegend([['#378ADD','Bucket 1'],['#1D9E75','Bucket 2'],['#D85A30','Bucket 3']]);
+    renderToggleButtons();
+    
+    const cagr=v.b1+v.b2+v.b3>0?((Math.pow(s.end+s.inc,1/v.yrs)-1)*100):0;
+    const mwr=ti>0?(Math.max(...pad.map((x,i)=>x.w/(x.tot+x.w||1)))*100):0;
+    document.getElementById('cagr').textContent=cagr.toFixed(1)+'%';
+    document.getElementById('mwr').textContent=mwr.toFixed(1)+'%';
+  } else {
+    const N=500;
+    const allT=Array.from({length:v.yrs},()=>[]);
+    let depCnt=0,tiSum=0,ebArr=[];
+    for(let i=0;i<N;i++){
+      const s=sim(v.b1,v.b2,v.b3,v.w,v.inf,v.r1,v.r2,v.r3,v.yrs,true);
+      const d=s.data;
+      while(d.length<v.yrs)d.push({y:d.length+1,b:[0,0,0],tot:0,w:0});
+      d.slice(0,v.yrs).forEach((pt,idx)=>allT[idx].push(pt.tot));
+      if(s.depY)depCnt++;
+      tiSum+=s.inc; ebArr.push(s.end);
+    }
+    const p10=allT.map(a=>Math.round(pct(a,10)*10)/10);
+    const p50=allT.map(a=>Math.round(pct(a,50)*10)/10);
+    const p90=allT.map(a=>Math.round(pct(a,90)*10)/10);
+    const med=sim(v.b1,v.b2,v.b3,v.w,v.inf,v.r1,v.r2,v.r3,v.yrs,false);
+    while(med.data.length<v.yrs)med.data.push({y:med.data.length+1,b:[0,0,0],tot:0,w:0});
+    lastSimData=med.data.slice(0,v.yrs);
+    renderBreakdownTable(lastSimData,v.b1,v.b2,v.b3);
+
+    datasets=[
+      {label:'Optimistic (P90)',data:p90,borderColor:'#378ADD',backgroundColor:'rgba(55,138,221,0.07)',fill:true,tension:0.35,borderWidth:1.5,borderDash:[5,3],pointRadius:0},
+      {label:'Median (P50)',data:p50,borderColor:'#1D9E75',backgroundColor:'rgba(29,158,117,0.1)',fill:true,tension:0.35,borderWidth:2.5,pointRadius:0},
+      {label:'Pessimistic (P10)',data:p10,borderColor:'#D85A30',backgroundColor:'rgba(216,90,48,0.06)',fill:false,tension:0.35,borderWidth:1.5,borderDash:[3,2],pointRadius:0},
+    ];
+    const sr=Math.round((1-depCnt/N)*100);
+    const p50depY=p50.findIndex(v=>v<=0);
+    ylStr=p50depY===-1?(v.yrs+'+ yrs'):(p50depY+1)+' yrs';
+    document.getElementById('myl').style.color=p50depY===-1?'var(--color-text-success)':'var(--color-text-danger)';
+    ti=tiSum/N; eb=pct(ebArr,50);
+    document.getElementById('msr-placeholder').style.display='none';
+    const srEl=document.getElementById('msr');
+    srEl.textContent=sr+'%';
+    srEl.style.color=sr>=85?'var(--color-text-success)':sr>=65?'var(--color-text-warning)':'var(--color-text-danger)';
+    setLegend([['#378ADD','Optimistic (P90)'],['#1D9E75','Median (P50)'],['#D85A30','Pessimistic (P10)']]);
+    
+    const corpus=v.b1+v.b2+v.b3;
+    const cagr=corpus>0?((Math.pow(eb+tiSum/N,1/v.yrs)-1)*100):0;
+    document.getElementById('cagr').textContent=cagr.toFixed(1)+'%';
+    document.getElementById('mwr').textContent='—';
+  }
+
+  document.getElementById('myl').textContent=ylStr;
+  document.getElementById('mti').textContent=fmtL(ti);
+  document.getElementById('meb').textContent=fmtL(Math.max(0,eb));
+  
+  const corpus=v.b1+v.b2+v.b3;
+  const swr=corpus>0?(v.w/corpus*100).toFixed(2)+'%':'—';
+  document.getElementById('swr').textContent=swr;
+  const aaw=ti>0?(ti/v.yrs).toFixed(1)+'L':'—';
+  document.getElementById('aaw').textContent=typeof aaw==='string'?aaw:fmtL(aaw);
+
+  if(ch)ch.destroy();
+  ch=new Chart(document.getElementById('simch'),{
+    type:'line',
+    data:{labels,datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:ctx=>{const val=ctx.raw;return ctx.dataset.label+': '+fmtL(val);}}}
+      },
+      scales:{
+        x:{ticks:{autoSkip:true,maxTicksLimit:10,color:'#888',font:{size:11}},grid:{color:'rgba(128,128,128,0.07)'}},
+        y:{min:0,ticks:{color:'#888',font:{size:11},callback:v=>v>=100?(v/100).toFixed(0)+'Cr':v+'L'},grid:{color:'rgba(128,128,128,0.07)'}}
+      }
+    }
+  });
+}
+
+function renderToggleButtons(){
+  const toggles=document.getElementById('toggles');
+  toggles.innerHTML=[1,2,3].map(i=>`<button class="toggle-bucket-btn ${!visibleBuckets[i]?'hidden':''}" onclick="toggleBucketVisibility(${i})">Bucket ${i}</button>`).join('');
+}
+
+function toggleBucketVisibility(bucket){
+  visibleBuckets[bucket]=!visibleBuckets[bucket];
+  renderToggleButtons();
+  runSim();
+}
+
+updateCorpus();
+renderScenarios();
+
+// Tooltip positioning
+document.addEventListener('mouseover', (e) => {
+  if (e.target.closest('.tooltip-container')) {
+    const container = e.target.closest('.tooltip-container');
+    const tooltip = container.querySelector('.tooltip-text');
+    if (tooltip) {
+      setTimeout(() => {
+        const rect = container.getBoundingClientRect();
+        const tooltipRect = tooltip.getBoundingClientRect();
+        let top = rect.top - tooltipRect.height - 10;
+        let left = rect.left + rect.width / 2 - tooltipRect.width / 2;
+        
+        // Adjust if tooltip goes off screen
+        if (top < 10) top = rect.bottom + 10;
+        if (left < 10) left = 10;
+        if (left + tooltipRect.width > window.innerWidth - 10) {
+          left = window.innerWidth - tooltipRect.width - 10;
+        }
+        
+        tooltip.style.top = top + 'px';
+        tooltip.style.left = left + 'px';
+      }, 0);
+    }
+  }
+});
+
+window.addEventListener('load',()=>setTimeout(runSim,150));
+</script>
+</body>
+</html>
